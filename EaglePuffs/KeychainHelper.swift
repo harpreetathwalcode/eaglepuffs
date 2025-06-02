@@ -5,6 +5,9 @@
 //  Created by Harpreet Athwal on 6/1/25.
 //
 
+//Securely saves and retrieves credentials using Apple's Keychain services.
+//Used by AuthViewModel to remember the user when "Remember Me" is checked.
+
 import Foundation
 import Security
 

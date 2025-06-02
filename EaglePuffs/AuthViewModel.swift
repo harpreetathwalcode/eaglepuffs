@@ -5,6 +5,9 @@
 //  Created by Harpreet Athwal on 6/1/25.
 //
 
+//Handles Firebase authentication actions: sign-in, sign-up, sign-out, password reset.
+//Manages isSignedIn, error messages, and loading states.
+//Optionally saves credentials to Keychain for auto-login.
 
 import Foundation
 import FirebaseAuth

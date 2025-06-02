@@ -4,10 +4,13 @@
 //
 //  Created by Harpreet Athwal on 6/1/25.
 //
+
+//Presents the user interface for login, sign-up, and password reset.
+//Includes a "Remember Me" toggle to optionally save credentials.
+//Binds to AuthViewModel for authentication actions.
+
 import SwiftUI
 import LocalAuthentication
-
-// MARK: - AuthView
 
 struct AuthView: View {
     @EnvironmentObject var authVM: AuthViewModel

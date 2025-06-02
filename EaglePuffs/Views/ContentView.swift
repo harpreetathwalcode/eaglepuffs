@@ -4,9 +4,8 @@
 //
 //  Created by Harpreet Athwal on 6/1/25.
 //
-import SwiftUI
 
-// MARK: - ContentView
+import SwiftUI
 
 struct ContentView: View {
     @StateObject private var bleManager = BLEManager()

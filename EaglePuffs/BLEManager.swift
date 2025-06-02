@@ -23,8 +23,22 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
+
+        // Restore previously connected peripheral if available
+        if let uuidString = UserDefaults.standard.string(forKey: "lastConnectedPeripheralUUID"),
+           let uuid = UUID(uuidString: uuidString) {
+            let restoredPeripherals = centralManager.retrievePeripherals(withIdentifiers: [uuid])
+            if let peripheral = restoredPeripherals.first {
+                print("Restoring connection to previously connected peripheral: \(peripheral.name ?? "Unknown")")
+                connectedPeripheral = peripheral
+                peripheral.delegate = self
+                centralManager.connect(peripheral)
+            }
+        }
+
         print("BLE Manager initialized.")
     }
+
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn {
@@ -40,6 +54,12 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         if !peripherals.contains(peripheral) {
             peripherals.append(peripheral)
             print("Discovered peripheral: \(peripheral.name ?? "Unknown")")
+
+            // Auto-reconnect if UUID matches whats stored for last connection
+            if let uuidString = UserDefaults.standard.string(forKey: "lastConnectedPeripheralUUID"),
+               peripheral.identifier.uuidString == uuidString {
+                connect(to: peripheral)
+            }
         }
     }
 
@@ -49,6 +69,9 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         connectedPeripheral = peripheral
         peripheral.delegate = self
         centralManager.connect(peripheral)
+
+        // Save identifier to UserDefaults
+        UserDefaults.standard.set(peripheral.identifier.uuidString, forKey: "lastConnectedPeripheralUUID")
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -121,6 +144,7 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         if let peripheral = connectedPeripheral {
             centralManager.cancelPeripheralConnection(peripheral)
             print("Disconnect requested.")
+            UserDefaults.standard.removeObject(forKey: "lastConnectedPeripheralUUID")
         }
     }
 }

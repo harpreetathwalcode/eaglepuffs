@@ -15,5 +15,11 @@
 			</array>
 		</dict>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
+	<key>Uses Bluetooth LE accessories</key>
+	<string>EaglePuffs uses Bluetooth LE Accessory settings</string>
 </dict>
 </plist>

@@ -5,7 +5,8 @@
 //  Created by Harpreet Athwal on 6/1/25.
 //
 
-
+// UIKit app delegate adapted for SwiftUI.
+// Responsibility: Initializes Firebase using FirebaseApp.configure() during app launch.
 import UIKit
 import FirebaseCore
 
