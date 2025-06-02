@@ -12,9 +12,11 @@
 		278F12492DEAA501008FF973 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 278F12482DEAA501008FF973 /* GoogleSignIn */; };
 		278F124B2DEAA501008FF973 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 278F124A2DEAA501008FF973 /* GoogleSignInSwift */; };
 		278F12592DED47DE008FF973 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 278F12582DED47DE008FF973 /* FirebaseFirestore */; };
+		278F125D2DED668C008FF973 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 278F125C2DED667D008FF973 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		278F125C2DED667D008FF973 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		27C4C64B2DE6964F00E8FF34 /* EaglePuffs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EaglePuffs.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -58,6 +60,7 @@
 		27C4C6422DE6964F00E8FF34 = {
 			isa = PBXGroup;
 			children = (
+				278F125C2DED667D008FF973 /* .gitignore */,
 				27C4C64D2DE6964F00E8FF34 /* EaglePuffs */,
 				27C4C64C2DE6964F00E8FF34 /* Products */,
 			);
@@ -144,6 +147,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				278F125D2DED668C008FF973 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
