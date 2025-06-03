@@ -19,6 +19,7 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     private var dataCharacteristic: CBCharacteristic?
     private let serviceUUID = CBUUID(string: "12345678-1234-5678-1234-56789abcdef0")
     private let characteristicUUID = CBUUID(string: "87654321-4321-6789-4321-0fedcba98765")
+    var context = PersistenceController.shared.container.viewContext
 
     override init() {
         super.init()
@@ -116,12 +117,51 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        guard let value = characteristic.value, let str = String(data: value, encoding: .ascii) else { return }
-        DispatchQueue.main.async {
-            self.messages.append("Device: \(str)")
-        }
-        print("Received from device: \(str)")
-    }
+           guard let value = characteristic.value,
+                 let str = String(data: value, encoding: .ascii),
+                 !str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+               return
+           }
+
+           DispatchQueue.main.async {
+               self.messages.append("Device: \(str)")
+               self.parseAndStoreSensorData(from: str)
+           }
+
+           print("Received from device: \(str)")
+           
+       }
+
+       private func parseAndStoreSensorData(from input: String) {
+           let trimmedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+           if trimmedInput.contains("|") {
+               let entries = trimmedInput.split(separator: "|")
+               for entry in entries {
+                   processSensorEntry(String(entry))
+               }
+           } else {
+               processSensorEntry(trimmedInput)
+           }
+
+           try? context.save()
+       }
+
+       private func processSensorEntry(_ entry: String) {
+           let parts = entry.split(separator: ",")
+           guard parts.count == 2,
+                 let start = Int64(parts[0]),
+                 let duration = Int64(parts[1]) else {
+               print("Invalid entry: \(entry)")
+               return
+           }
+
+           let sensorData = SensorData(context: context)
+           sensorData.start = start
+           sensorData.duration = duration
+           sensorData.timestamp = Date()
+           sensorData.isSynced = false
+       }
 
     func sendMessage(_ msg: String) {
         guard let characteristic = dataCharacteristic,

@@ -1,16 +1,17 @@
-//
-//  ContentView.swift
-//  EaglePuffs
-//
-//  Created by Harpreet Athwal on 6/1/25.
-//
-
 import SwiftUI
+import CoreData
 
 struct ContentView: View {
     @StateObject private var bleManager = BLEManager()
     @State private var textInput: String = ""
-    @EnvironmentObject var authVM: AuthViewModel // <--- Added
+    @EnvironmentObject var authVM: AuthViewModel
+    @Environment(\.managedObjectContext) private var viewContext
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \SensorData.start, ascending: true)],
+        animation: .default
+    )
+    private var sensorDataList: FetchedResults<SensorData>
 
     var body: some View {
         VStack {
@@ -43,6 +44,7 @@ struct ContentView: View {
                                 TextField("Enter ASCII message...", text: $textInput)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .disableAutocorrection(true)
+
                                 Button("Send") {
                                     if !textInput.isEmpty {
                                         bleManager.sendMessage(textInput)
@@ -52,9 +54,34 @@ struct ContentView: View {
                                 .buttonStyle(.borderedProminent)
                             }
                             .padding(.horizontal)
-                            List(bleManager.messages, id: \.self) { msg in
-                                Text(msg)
+
+                            List(sensorDataList, id: \.self) { data in
+                                VStack(alignment: .leading) {
+                                    Text("Start: \(data.start)")
+                                    Text("Duration: \(data.duration)")
+                                    if let timestamp = data.timestamp {
+                                        Text("Received Timestamp: \(timestamp)")
+                                    } else {
+                                        Text("Received Timestamp: Unknown")
+                                    }
+                                    Text("Synced: \(data.isSynced ? "Yes" : "No")")
+                                        .foregroundColor(data.isSynced ? .green : .red)
+                                }
                             }
+
+                            PuffChartsView(sensorDataList: sensorDataList)
+
+                            Button(action: {
+                                SensorDataManager.shared.clearAllSensorData(context: viewContext)
+                            }) {
+                                Text("Clear All Messages")
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .background(Color.red)
+                                    .cornerRadius(10)
+                            }
+                            .padding()
+
                             Button("Disconnect") {
                                 bleManager.disconnect()
                             }
@@ -65,6 +92,9 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            bleManager.context = viewContext
         }
     }
 }
