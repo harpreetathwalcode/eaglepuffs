@@ -31,7 +31,8 @@ struct ContentView: View {
                     }
                     .navigationTitle("Eagle Puffs: Devices")
                     .listStyle(InsetGroupedListStyle())
-                } else {
+                }
+//                else {
                     Form {
                         Section(header: Text("Send Message")) {
                             HStack {
@@ -78,7 +79,7 @@ struct ContentView: View {
                                 Spacer()
                             }
                         }
-                    }
+//                    }
                     .navigationTitle("Connected: \(bleManager.connectedPeripheral?.name ?? "")")
                 }
             }

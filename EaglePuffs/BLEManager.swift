@@ -8,18 +8,25 @@
 
 import Foundation
 import CoreBluetooth
+import FirebaseFirestore
+import FirebaseAuth
 
 class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     @Published var peripherals: [CBPeripheral] = []
     @Published var connectedPeripheral: CBPeripheral?
     @Published var messages: [String] = []
     @Published var isConnected = false
-
+    
+    // BLE Vars
     private var centralManager: CBCentralManager!
     private var dataCharacteristic: CBCharacteristic?
     private let serviceUUID = CBUUID(string: "12345678-1234-5678-1234-56789abcdef0")
     private let characteristicUUID = CBUUID(string: "87654321-4321-6789-4321-0fedcba98765")
     var context = PersistenceController.shared.container.viewContext
+    // Timer Sync to Firebase vars
+    private var syncTimer: Timer?
+    private let syncInterval: TimeInterval = 10 // seconds, adjust as you wish
+    private let firestore = Firestore.firestore()
 
     override init() {
         super.init()
@@ -38,9 +45,57 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         }
 
         print("BLE Manager initialized.")
+        // Start periodic sync timer
+        syncTimer = Timer.scheduledTimer(withTimeInterval: syncInterval, repeats: true) { [weak self] _ in
+            self?.syncUnsyncedSensorData()
+        }
     }
 
+    private func syncUnsyncedSensorData() {
+        let fetchRequest = SensorData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "isSynced == NO")
 
+        do {
+            let unsynced = try context.fetch(fetchRequest)
+            guard !unsynced.isEmpty else { return }
+
+            let userEmail = Auth.auth().currentUser?.email ?? "unknown"
+
+            for data in unsynced {
+                let dict: [String: Any] = [
+                    "start": data.start,
+                    "duration": data.duration,
+                    "centralTimestamp": data.timestamp ?? Date(),
+                    "sendTimestamp": Date(),
+                    "userEmail": userEmail,
+                    "serviceUUID": serviceUUID.uuidString,
+                    "characteristicUUID": characteristicUUID.uuidString
+                ]
+                // Optionally, use the objectID as a unique ID
+                let rawID = data.objectID.uriRepresentation().absoluteString
+                let nanoseconds = DispatchTime.now().uptimeNanoseconds  // Preferred for uniqueness
+                let combinedID = "\(nanoseconds)_\(rawID)"
+                let docID = combinedID.replacingOccurrences(of: "[^A-Za-z0-9_]", with: "_", options: .regularExpression)
+
+                firestore.collection("SensorData").document(docID).setData(dict) { [weak self] error in
+                    guard let self = self else { return }
+                    if error == nil {
+                        // Mark as synced only if successful
+                        data.isSynced = true
+                        do {
+                            try self.context.save()
+                        } catch {
+                            print("CoreData save error after sync: \(error)")
+                        }
+                    } else {
+                        print("Failed to sync SensorData: \(error!)")
+                    }
+                }
+            }
+        } catch {
+            print("Failed to fetch unsynced SensorData: \(error)")
+        }
+    }
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn {
             central.scanForPeripherals(withServices: [serviceUUID])
