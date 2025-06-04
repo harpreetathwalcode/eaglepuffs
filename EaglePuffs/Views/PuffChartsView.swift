@@ -57,19 +57,19 @@ struct PuffChartsView: View {
                 Chart(sensorDataList) { data in
                     PointMark(
                         x: .value("Time", data.timestamp ?? Date()),
-                        y: .value("Puff Rate", data.start)
+                        y: .value("Puff Duration", data.duration)
                     )
                 }
                 .frame(height: 200)
 
-                // Gauge: Latest Puff Rate
+                // Gauge: Latest Puff Duration
                 if let latest = sensorDataList.last {
                     Text("Current Puff Rate")
                         .font(.headline)
                     Gauge(value: Double(latest.duration), in: 0...1000) {
-                        Text("Puff Rate")
+                        Text("Puff Duration")
                     } currentValueLabel: {
-                        Text("\(latest.start)")
+                        Text("\(latest.duration)")
                     }
                     .gaugeStyle(.accessoryCircular)
                     .frame(height: 100)
