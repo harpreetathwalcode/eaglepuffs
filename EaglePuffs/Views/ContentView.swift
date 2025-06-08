@@ -46,8 +46,16 @@ struct ContentView: View {
                                         textInput = ""
                                     }
                                 }
+                                .disabled(!bleManager.isSubscribed)
                                 .buttonStyle(.borderedProminent)
                             }
+                        }
+                        
+                        Section(header: Text("Last Successful Message")) {
+                            Text(bleManager.lastSuccessfulMessage.isEmpty ? "None yet" : bleManager.lastSuccessfulMessage)
+                                .font(.body)
+                                .foregroundColor(bleManager.lastSuccessfulMessage.isEmpty ? .gray : .green)
+                                .padding(.vertical, 4)
                         }
 
                         Section(header: Text("Navigation")) {

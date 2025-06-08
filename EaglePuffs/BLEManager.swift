@@ -16,6 +16,11 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     @Published var connectedPeripheral: CBPeripheral?
     @Published var messages: [String] = []
     @Published var isConnected = false
+    @Published var isSubscribed = false
+    @Published var lastSuccessfulMessage: String = ""
+    private var pendingMessage: String?
+
+
     
     // BLE Vars
     private var centralManager: CBCentralManager!
@@ -138,6 +143,7 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         isConnected = false
+        isSubscribed = false
         connectedPeripheral = nil
         dataCharacteristic = nil
         peripherals.removeAll()
@@ -168,8 +174,22 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-        print(characteristic.isNotifying ? "Notification enabled." : "Notification disabled.")
+        if characteristic.uuid == characteristicUUID {
+            if characteristic.isNotifying {
+                print("✅ Notification enabled for characteristic: \(characteristic.uuid)")
+                DispatchQueue.main.async {
+                    self.isSubscribed = true
+                }
+                sendMessage("subscribed")
+            } else {
+                print("❌ Notification disabled for characteristic: \(characteristic.uuid)")
+                DispatchQueue.main.async {
+                    self.isSubscribed = false
+                }
+            }
+        }
     }
+
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
            guard let value = characteristic.value,
@@ -177,10 +197,21 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                  !str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                return
            }
-
+        
+           let trimmedStr = str.trimmingCharacters(in: .whitespacesAndNewlines)
+        
            DispatchQueue.main.async {
                self.messages.append("Device: \(str)")
-               self.parseAndStoreSensorData(from: str)
+               
+               // ✅ If the device sent the expected ACK, store the pending message
+               // Else process the message as new data
+               if trimmedStr == "ACKNOWLEDGE_PUFF_SETTINGS", let pending = self.pendingMessage {
+                   self.lastSuccessfulMessage = pending
+                   print("✅ LastSuccessfulMessage set to: \(pending)")
+                   self.pendingMessage = nil  // Clear after success
+               } else {
+                   self.parseAndStoreSensorData(from: str)
+               }
            }
 
            print("Received from device: \(str)")
@@ -227,6 +258,8 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
             return
         }
         if let data = msg.data(using: .ascii) {
+            pendingMessage = msg  // Track this message as pending!
+
             peripheral.writeValue(data, for: characteristic, type: .withResponse)
             DispatchQueue.main.async {
                 self.messages.append("You: \(msg)")
